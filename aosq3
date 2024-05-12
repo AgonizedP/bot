@@ -1,0 +1,77 @@
+-- Initializing global variables to store the latest game state and game host process.
+LatestGameState = LatestGameState or nil
+InAction = InAction or false -- Prevents the agent from taking multiple actions at once.
+Logs = Logs or {}
+
+colors = {
+    red = "\27[31m",
+    green = "\27[32m",
+    blue = "\27[34m",
+    reset = "\27[0m",
+    gray = "\27[90m"
+}
+
+function addLog(msg, text) -- Function definition commented for performance, can be used for debugging
+    Logs[msg] = Logs[msg] or {}
+    table.insert(Logs[msg], text)
+end
+-- Function to calculate distance between two points and check if it's within a range
+local function inRange(x1, y1, x2, y2, range)
+    local distanceSquared = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)
+    return distanceSquared <= range * range, distanceSquared
+end
+
+-- Function to decide player's next action based on opponents' positions and energy
+local function decideNextAction(player, otherPlayers)
+    local playerX, playerY, playerEnergy = player.x, player.y, player.energy
+
+    for _, opponent in ipairs(otherPlayers) do
+        local inRange, distanceSquared = inRange(playerX, playerY, opponent.x, opponent.y, 1)
+        
+        if inRange then
+            if opponent.energy <= 10 then
+                -- Attack the nearest opponent player with energy less than or equal to 10
+                print(colors.green .. "Player is within range. Attacking..." .. colors.reset)
+                return
+            elseif opponent.energy > 20 then
+                -- Retreat if there is an opponent player with energy greater than 20
+                print(colors.red .. "Opponent player is above average. Retreating..." .. colors.reset)
+                return
+            end
+        end
+    end
+
+    -- If no opponent player meets the conditions, move randomly or handle energy
+    if playerEnergy < 10 then
+        print(colors.red .. "Player has insufficient energy! Emergency energy check needed." .. colors.reset)
+        -- Add logic here to handle emergency energy check or other actions
+    else
+        -- Add logic for other possible actions based on game rules
+        print(colors.red .. "No immediate threat. Deciding next move..." .. colors.reset)
+        -- Add code for other actions or strategies
+    end
+end
+ Handlers.add(
+    "ReturnAttack", 
+    Handlers.utils.hasMatchingTag("Action", "Hit"),
+    function(msg) 
+        local playerEnergy = 20
+
+        local enemyEnergy = 15 
+
+        if playerEnergy > 10 then
+            print("Returning attack...")
+        else
+            print(colors.red .. "Player has insufficient energy to return attack!" .. "\27[0m")
+            emergencyEnergyCheck(playerEnergy)
+        end
+    end
+)
+
+Handlers.add(
+    "StartTick",
+    Handlers.utils.hasMatchingTag("Action", "Payment-Received"),
+    function (msg)
+        print("Game started! Let the ticking begin!")
+    end
+)
